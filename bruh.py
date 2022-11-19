@@ -1,103 +1,90 @@
 from tkinter import *
-from simplecrypt import encrypt,decrypt
-from firebase import firebase
-firebase = firebase.FirebaseApplication("https://py-chat-app-58e83-default-rtdb.firebaseio.com/",None)
+from simplecrypt import encrypt, decrypt
+from tkinter import filedialog as fd 
+import os
 
-login_window = Tk()
-login_window.geometry("400x400")
-login_window.config(bg='#AB92BF')
+root = Tk()
+root.geometry("400x250")
+root.configure(bg="red")
 
-username=""
-yourcode=""
-friendcode=""
-message_text=""
-message_entry=""
-last_value=""
-def getdata():
-    global last_value
-    global yourcode
-    global message_text
-    global friendcode
-    getyourdata=firebase.get("/",yourcode)
-    print(getyourdata)
-    byte_str=bytes.fromhex(getyourdata)
-    original=decrypt("message",byte_str)
-    print(original)
-    finalmessage=original.decode("utf_8")
-    message_text.insert(END,finalmessage+"\n")
-    getyourfrienddata=firebase.get("/",friendcode)
-    if (getyourfrienddata != None):
-        byte_str=bytes.fromhex(getyourfrienddata)
-        original=decrypt("message",byte_str)
-        finalmessage=original.decode("utf_8")
-        if (finalmessage not in lastvalue): 
-            message.text.insert(finalmessage+"\n")
-            last_value=final_message
-        
-        
-        
-        
-def senddata():
-    global username
-    global yourcode
-    global message_entry
-    message=username+":"+message_entry.get()
-    ciphertext=encrypt("message",message)
-    hexstring=ciphertext.hex()
-    print(hexstring)
-    put_date=firebase.put("/",yourcode,hexstring)
-    getdata()
-def enterRoom():
+file_name_entry = ''
+encryption_text_data = ''
+decryption_text_data = ''
+
+def saveData():
+    global file_name_entry
+    global encryption_text_data
+    file_name = file_name_entry.get()
+    file = open(file_name + ".txt","w")
+    data = encryption_text_data.get(1.0,END)
     
-    global username
-    global yourcode
-    global friendcode
-    global message_text
-    global message_entry
-    username = username_entry.get()
-    yourcode = your_code_entry.get()
-    friendcode = friends_code_entry.get()
-    login_window.destroy()
+    ciphercode = encrypt('AIM',data)
+    hex_data = ciphercode.hex()
+    print(hex_data)
     
-    message_window = Tk()
-    message_window.config(bg='#AFC1D6')
-    message_window.geometry("600x500")
+    file.write(hex_data)
+    file_name_entry.delete(0,END)
+    encryption_text_data.delete(1.0,END)
+    messagebox.showinfo("Success!","Data is updated!")
     
-    message_text = Text(message_window, height=20, width=72)
-    message_text.place(relx=0.5,rely=0.35, anchor=CENTER)
+def viewData():
+    global decryption_text_data
+    textFile = fd.askopenfilename(title="Open Text File", filetypes=(("Text Files","*.txt"),))
+    name = os.path.basename(textFile)
+    print(name)
+    text_file = open(name,'r')
+    paragraph = text_file.read()
+    byte_str = bytes.fromhex(paragraph)
+    original = decrypt('AIM',byte_str)
+    final_msg = original.decode("utf-8")
+    decryption_text_data.insert(END,final_msg)
+    text_file.close()
+
+def start_encryption():
+    global file_name_entry
+    global encryption_text_data
+    root.destroy()
     
+    encryptionWindow = Tk()
+    encryptionWindow.geometry("500x500")
+    encryptionWindow.configure(bg="orange")
     
-    message_label = Label(message_window, text="Message " , font = 'arial 13', bg='#AFC1D6', fg="white")
-    message_label.place(relx=0.3,rely=0.8, anchor=CENTER)
+    file_name_label = Label(encryptionWindow, text="File Name: ",font=("Times",15,"bold"),bg="orange",fg="navyblue")
+    file_name_label.place(relx=0.1,rely=0.15,anchor=CENTER)
     
-    message_entry = Entry(message_window, font = 'arial 15')
-    message_entry.place(relx=0.6,rely=0.8, anchor=CENTER)
+    file_name_entry = Entry(encryptionWindow,font=("Times",15),fg="black")
+    file_name_entry.place(relx=0.35,rely=0.15,anchor=CENTER)
     
-    btn_send = Button(message_window, text="Send", font = 'arial 13', bg="#D6CA98", fg="black", padx=10, relief=FLAT,command=senddata)
-    btn_send.place(relx=0.5,rely=0.9, anchor=CENTER)
+    create_button = Button(encryptionWindow,text="Create",font=("Arial",15,"bold"),bg="navyblue",fg="white",relief=FLAT,command=saveData)
+    create_button.place(relx=0.8,rely=0.15,anchor=CENTER)
     
-    message_window.mainloop()
+    encryption_text_data = Text(encryptionWindow,width=75,height=22,relief=FLAT,bg="navyblue",fg="white",font=("Castellar",12,"bold","italic"))
+    encryption_text_data.place(relx=0.5,rely=0.6,anchor=CENTER)
     
+    encryptionWindow.mainloop()
+    
+def start_decryption():
+    global file_name_entry
+    global decryption_text_data
+    root.destroy()
+    
+    decryptionWindow = Tk()
+    decryptionWindow.geometry("500x500")
+    decryptionWindow.configure(bg="orange")
+    
+    decryption_text_data = Text(decryptionWindow,width=75,height=22,relief=FLAT,bg="navyblue",fg="white",font=("Castellar",12,"bold","italic"))
+    decryption_text_data.place(relx=0.5,rely=0.4,anchor=CENTER)
+    
+    openFileButton = Button(decryptionWindow,text="Choose File....",bg="navyblue",fg="white",relief=FLAT,font=("Arial",20,"bold"),command=viewData)
+    openFileButton.place(relx=0.5,rely=0.8,anchor=CENTER)
+    
+heading_label = Label(root,text="new and simple",bg="red",fg="white",font=("Castellar",25,"bold"))
+heading_label.place(relx=0.5,rely=0.2,anchor=CENTER)
 
-username_label = Label(login_window, text="Username : " , font = 'arial 13', bg ='#AB92BF', fg="white")
-username_label.place(relx=0.3,rely=0.3, anchor=CENTER)
+encryption_btn = Button(root,text="Encryption",relief=FLAT,bg="skyblue",fg="navyblue",font=("Times",20,"bold"),command=start_encryption)
+encryption_btn.place(relx=0.4,rely=0.5,anchor=CENTER)
 
-username_entry = Entry(login_window)
-username_entry.place(relx=0.6,rely=0.3, anchor=CENTER)
+decryption_btn = Button(root,text="Decryption",relief=FLAT,bg="skyblue",fg="navyblue",font=("Times",20,"bold"),command=start_decryption)
+decryption_btn.place(relx=0.6,rely=0.5,anchor=CENTER)
 
-your_code_label = Label(login_window, text="Your code :  " , font = 'arial 13', bg ='#AB92BF', fg="white")
-your_code_label.place(relx=0.3,rely=0.4, anchor=CENTER)
-
-your_code_entry = Entry(login_window)
-your_code_entry.place(relx=0.6,rely=0.4, anchor=CENTER)
-
-friends_code_label = Label(login_window, text="Your Friends code :  " , font = 'inter', bg ='#AB92BF', fg="white")
-friends_code_label.place(relx=0.22,rely=0.5, anchor=CENTER)
-
-friends_code_entry = Entry(login_window)
-friends_code_entry.place(relx=0.6,rely=0.5, anchor=CENTER)
-
-btn_start = Button(login_window, text="Start" , font = 'inter' , bg="#CEF9F2", fg="black", command=enterRoom, relief=FLAT, padx=10)
-btn_start.place(relx=0.5,rely=0.65, anchor=CENTER)
-
-login_window.mainloop()
+root.mainloop()
